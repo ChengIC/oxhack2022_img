@@ -12,7 +12,8 @@ import time, os, copy, argparse
 import multiprocessing
 from torchsummary import summary
 from matplotlib import pyplot as plt
-
+import warnings # for some torch warnings regarding depreciation
+warnings.filterwarnings("ignore")
 # Construct argument parser
 ap = argparse.ArgumentParser()
 ap.add_argument("--mode", required=True, help="Training mode: finetue/transfer/scratch")
@@ -22,34 +23,38 @@ args= vars(ap.parse_args())
 train_mode=args["mode"]
 
 # Set the train and validation directory paths
-train_directory = 'imds_small/train'
-valid_directory = 'imds_small/val'
+train_directory = './train_imgs/'
+valid_directory = './val_imgs/'
 # Set the model save path
 PATH="model.pth" 
 
 # Batch size
-bs = 64 
+bs = 20
 # Number of epochs
-num_epochs = 10
+num_epochs = 30
 # Number of classes
-num_classes = 11
+num_classes = 2
 # Number of workers
-num_cpu = multiprocessing.cpu_count()
+num_cpu = 0
+# multiprocessing.cpu_count()
 
 # Applying transforms to the data
 image_transforms = { 
     'train': transforms.Compose([
-        transforms.RandomResizedCrop(size=256, scale=(0.8, 1.0)),
+        # transforms.RandomResizedCrop(size=[512,512], scale=(0.8, 1.0)),
+        transforms.Resize(size=[512,512]),
         transforms.RandomRotation(degrees=15),
         transforms.RandomHorizontalFlip(),
-        transforms.CenterCrop(size=224),
+        transforms.RandomVerticalFlip(),
+        transforms.RandomGrayscale(p=0.5),
+#         transforms.CenterCrop(size=448),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406],
                              [0.229, 0.224, 0.225])
     ]),
     'valid': transforms.Compose([
-        transforms.Resize(size=256),
-        transforms.CenterCrop(size=224),
+        transforms.Resize(size=[512,512]),
+#         transforms.CenterCrop(size=448),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406],
                              [0.229, 0.224, 0.225])
@@ -79,7 +84,7 @@ dataloaders = {
 # Class names or target labels
 class_names = dataset['train'].classes
 print("Classes:", class_names)
- 
+
 # Print the train and validation data sizes
 print("Training-set size:",dataset_sizes['train'],
       "\nValidation-set size:", dataset_sizes['valid'])
@@ -91,7 +96,6 @@ if train_mode=='finetune':
     # Load a pretrained model - Resnet18
     print("\nLoading resnet18 for finetuning ...\n")
     model_ft = models.resnet18(pretrained=True)
-
     # Modify fc layers to match num_classes
     num_ftrs = model_ft.fc.in_features
     model_ft.fc = nn.Linear(num_ftrs,num_classes )
@@ -100,7 +104,6 @@ elif train_mode=='scratch':
     # Load a custom model - VGG11
     print("\nLoading VGG11 for training from scratch ...\n")
     model_ft = MyVGG11(in_ch=3,num_classes=11)
-
     # Set number of epochs to a higher value
     num_epochs=100
 
@@ -134,8 +137,8 @@ print(model_ft)
 criterion = nn.CrossEntropyLoss()
 
 # Optimizer 
-optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
-
+# optimizer_ft = optim.SGD(model_ft.parameters(), lr=0.001, momentum=0.9)
+optimizer_ft = optim.Adam(model_ft.parameters(), lr=1e-4)
 # Learning rate decay
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
 

@@ -1,0 +1,7 @@
+/eval_ds
+/imds
+/test2
+*.pth
+/train_imgs
+/val_imgs
+/runs

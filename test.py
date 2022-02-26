@@ -5,22 +5,25 @@ from torchvision import models, transforms
 from PIL import Image
 from pathlib import Path
 import matplotlib.pyplot as plt
-
+import os 
+import warnings # for some torch warnings regarding depreciation
+warnings.filterwarnings("ignore")
 # Paths for image directory and model
-IMDIR=sys.argv[1])
-MODEL='models/resnet18.pth'
 
+# MODEL='models/resnet18.pth'
+MODEL='model.pth'
 # Load the model for testing
 model = torch.load(MODEL)
 model.eval()
 
 # Class labels for prediction
-class_names=['apple','atm card','cat','banana','bangle','battery','bottle','broom','bulb','calender','camera']
-
+# class_names=['apple','atm card','cat','banana','bangle','battery','bottle','broom','bulb','calender','camera']
+class_names=['calender', 'card']
 # Retreive 9 random images from directory
-files=Path(IMDIR).resolve().glob('*.*')
+# files=Path(IMDIR).resolve().glob('*.*')
+files = [os.path.join('./test2', f) for f in os.listdir('./test2')]
 images=random.sample(list(files), 9)
-
+print (images)
 # Configure plots
 fig = plt.figure(figsize=(9,9))
 rows,cols = 3,3
@@ -49,6 +52,7 @@ with torch.no_grad():
          plt.title("Pred: "+label)
          plt.axis('off')
          plt.imshow(img)
+    plt.show()
 '''
 Sample run: python test.py test
 '''
