@@ -12,6 +12,7 @@ import time, os, copy, argparse
 import multiprocessing
 from torchsummary import summary
 from matplotlib import pyplot as plt
+import json
 import warnings # for some torch warnings regarding depreciation
 warnings.filterwarnings("ignore")
 # Construct argument parser
@@ -31,9 +32,9 @@ PATH="model.pth"
 # Batch size
 bs = 20
 # Number of epochs
-num_epochs = 30
+num_epochs = 10
 # Number of classes
-num_classes = 2
+num_classes = 3
 # Number of workers
 num_cpu = 0
 # multiprocessing.cpu_count()
@@ -41,20 +42,19 @@ num_cpu = 0
 # Applying transforms to the data
 image_transforms = { 
     'train': transforms.Compose([
-        # transforms.RandomResizedCrop(size=[512,512], scale=(0.8, 1.0)),
-        transforms.Resize(size=[512,512]),
+        transforms.Resize(size=[224,224]),
         transforms.RandomRotation(degrees=15),
         transforms.RandomHorizontalFlip(),
         transforms.RandomVerticalFlip(),
         transforms.RandomGrayscale(p=0.5),
-#         transforms.CenterCrop(size=448),
+        transforms.CenterCrop(size=224),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406],
                              [0.229, 0.224, 0.225])
     ]),
     'valid': transforms.Compose([
-        transforms.Resize(size=[512,512]),
-#         transforms.CenterCrop(size=448),
+        transforms.Resize(size=[224,224]),
+        transforms.CenterCrop(size=224),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406],
                              [0.229, 0.224, 0.225])
@@ -83,6 +83,12 @@ dataloaders = {
 
 # Class names or target labels
 class_names = dataset['train'].classes
+cls_dict = {}
+for idx, cls in enumerate(class_names):
+    cls_dict[str(idx)]=cls
+json_string = json.dumps(cls_dict)
+with open('index_to_name.json', 'w') as outfile:
+    outfile.write(json_string)
 print("Classes:", class_names)
 
 # Print the train and validation data sizes
